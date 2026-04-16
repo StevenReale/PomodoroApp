@@ -46,7 +46,7 @@ Status: Done
 - Make Reset work
 - Update timer text and progress bar each second
 
-Status: In progress
+Status: Done
 
 ### 4. Wire up the settings inputs
 - Name the duration text boxes
@@ -54,31 +54,33 @@ Status: In progress
 - Validate input
 - Apply new values on Reset
 
-Status: Next
+Status: Done
 
-### 5. Add session switching
-- Switch from Work to Break when a work session ends
-- Switch from Break to Work when a break session ends
-- Update the label and timer accordingly
+### 5. Use explicit mode selection in the UI
+- Let the user explicitly choose Work or Break mode
+- Load the selected mode's duration on Reset
+- Stop and notify when a session completes
+- Do not auto-switch modes
 
-Status: Planned
+Status: Done
 
 ### 6. Polish basic behavior
-- Enable and disable buttons sensibly
+- Replace separate Start and Pause buttons with a single toggle button
 - Prevent invalid input from crashing the app
-- Decide when duration changes take effect
-- Add an optional completion sound or message
+- Add a simple completion notification with a beep and message
+- Decide on any final v1 UI and interaction tweaks
 
-Status: Planned
+Status: In progress
 
 ### 7. Refactor into light structure
-- Move logic out of `MainWindow.xaml.cs`
+- Move app behavior out of `MainWindow.xaml.cs`
 - Introduce a `MainViewModel`
-- Introduce a `PomodoroTimerService`
-- Introduce a `PomodoroSettings` model
-- Optionally add a `RelayCommand`
+- Introduce a `RelayCommand`
+- Bind UI controls to ViewModel properties and commands
+- Extract timer logic into a `PomodoroTimerService`
+- Add a `PomodoroSettings` model if it improves clarity
 
-Status: Planned
+Status: In progress
 
 ### 8. Publish the executable
 - Build a release version
@@ -132,14 +134,18 @@ Status: Planned
 Completed so far:
 - Project created
 - UI skeleton created
-- Basic timer wiring started
-- WPF/XAML/event concepts explained as needed
+- Basic timer wiring completed
+- Duration settings apply through Reset
+- Explicit Work / Break mode selection added
+- Minor UI polish applied to mode selector
+- Replace separate Start and Pause buttons with a single toggle button
+- Polish completion behavior and button-state behavior
 
 Immediate next step:
-- Wire up the duration text boxes so the settings actually affect the timer
+- Refactor the app to use a `MainViewModel` and bindings
 
 Step after that:
-- Add automatic switching between work and break sessions
+- Extract timer behavior into a `PomodoroTimerService`
 
 ## Suggested Repository Structure
 

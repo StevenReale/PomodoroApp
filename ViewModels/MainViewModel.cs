@@ -14,6 +14,8 @@ public class MainViewModel : INotifyPropertyChanged
 
     private int _workDurationMinutes = 25;
     private int _breakDurationMinutes = 5;
+    private string _workDurationInput = "25";
+    private string _breakDurationInput = "5";
 
     private bool _isWorkSession = true;
     private double _progressPercent;
@@ -30,16 +32,33 @@ public class MainViewModel : INotifyPropertyChanged
         set => SetField(ref _timerText, value);
     }
 
-    public int WorkDurationMinutes
+    public string WorkDurationInput
     {
-        get => _workDurationMinutes;
-        set => SetField( ref _workDurationMinutes, value);
+        get => _workDurationInput;
+        set => SetField( ref _workDurationInput, value);
     }
 
-    public int BreakDurationMinutes
+    public string BreakDurationInput
     {
-        get => _breakDurationMinutes;
-        set => SetField(ref _breakDurationMinutes, value);
+        get => _breakDurationInput;
+        set => SetField(ref _breakDurationInput, value);
+    }
+
+    private void SetSessionMode(bool isWorkSession)
+    {
+        if (_isWorkSession == isWorkSession)
+        {
+            return;
+        }
+
+        _isWorkSession = isWorkSession;
+        OnPropertyChanged(nameof(IsWorkSessionSelected));
+        OnPropertyChanged(nameof(IsBreakSessionSelected));
+
+        _timer.Stop();
+        ResetTimerForCurrentSession();
+        UpdateDisplay();
+        UpdateStartPauseButtonText();
     }
 
     public bool IsWorkSessionSelected
@@ -47,9 +66,9 @@ public class MainViewModel : INotifyPropertyChanged
         get => _isWorkSession;
         set
         {
-            if (SetField(ref _isWorkSession, value))
+            if (value)
             {
-                OnPropertyChanged(nameof(IsBreakSessionSelected));
+                SetSessionMode(true);
             }
         }
     }
@@ -61,7 +80,7 @@ public class MainViewModel : INotifyPropertyChanged
         {
             if (value)
             {
-                IsWorkSessionSelected = false;
+                SetSessionMode(false);
             }
         }
     }
@@ -147,18 +166,17 @@ public class MainViewModel : INotifyPropertyChanged
 
     private bool TryApplyDurationSettings()
     {
-        //bool workIsValid = int.TryParse(WorkDurationTextBox.Text, out int workMinutes);
-        //bool breakIsValid = int.TryParse(BreakDurationTextBox.Text, out int breakMinutes);
+        bool workIsValid = int.TryParse(WorkDurationInput, out int workMinutes);
+        bool breakIsValid = int.TryParse(BreakDurationInput, out int breakMinutes);
 
-        if (//!workIsValid || !breakIsValid ||
-            WorkDurationMinutes <= 0 || BreakDurationMinutes <= 0)
+        if (!workIsValid || !breakIsValid || workMinutes <= 0 || breakMinutes <= 0)
         {
             MessageBox.Show("Please enter positive whole numbers for work and break durations.");
             return false;
         }
 
-       // _workDurationMinutes = workMinutes;
-       // _breakDurationMinutes = breakMinutes;
+        _workDurationMinutes = workMinutes;
+        _breakDurationMinutes = breakMinutes;
 
         return true;
     }

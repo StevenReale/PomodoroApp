@@ -1,31 +1,27 @@
 ﻿using PomodoroApp.Commands;
+using PomodoroApp.Models;
+using PomodoroApp.Services;
 using System.ComponentModel;
 using System.Media;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Threading;
 
 namespace PomodoroApp.ViewModels;
 
 public class MainViewModel : INotifyPropertyChanged
 {
-    private readonly DispatcherTimer _timer;
+    private readonly PomodoroTimerService _timerService;
+    private readonly PomodoroSettings _settings;
 
-    private int _workDurationMinutes = 25;
-    private int _breakDurationMinutes = 5;
     private string _workDurationInput = "25";
     private string _breakDurationInput = "5";
 
-    private bool _isWorkSession = true;
+    private SessionMode _currentMode = SessionMode.Work;
     private double _progressPercent;
     private string _startPauseButtonText = "Start";
-
-
-    private TimeSpan _timeRemaining;
-    private TimeSpan _totalSessionTime;
-
     private string _timerText = "25:00";
+
     public string TimerText
     {
         get => _timerText;
@@ -44,43 +40,40 @@ public class MainViewModel : INotifyPropertyChanged
         set => SetField(ref _breakDurationInput, value);
     }
 
-    private void SetSessionMode(bool isWorkSession)
+    private void SetSessionMode(SessionMode mode)
     {
-        if (_isWorkSession == isWorkSession)
+        if (_currentMode == mode)
         {
             return;
         }
 
-        _isWorkSession = isWorkSession;
+        _currentMode = mode;
         OnPropertyChanged(nameof(IsWorkSessionSelected));
         OnPropertyChanged(nameof(IsBreakSessionSelected));
 
-        _timer.Stop();
         ResetTimerForCurrentSession();
-        UpdateDisplay();
-        UpdateStartPauseButtonText();
     }
 
     public bool IsWorkSessionSelected
     {
-        get => _isWorkSession;
+        get => _currentMode == SessionMode.Work;
         set
         {
             if (value)
             {
-                SetSessionMode(true);
+                SetSessionMode(SessionMode.Work);
             }
         }
     }
 
     public bool IsBreakSessionSelected
     {
-        get => !_isWorkSession;
+        get => _currentMode == SessionMode.Break;
         set
         {
             if (value)
             {
-                SetSessionMode(false);
+                SetSessionMode(SessionMode.Break);
             }
         }
     }
@@ -102,9 +95,11 @@ public class MainViewModel : INotifyPropertyChanged
 
     public MainViewModel()
     {
-        _timer = new DispatcherTimer();
-        _timer.Interval = TimeSpan.FromSeconds(1);
-        _timer.Tick += Timer_Tick;
+        _settings = new PomodoroSettings();
+
+        _timerService = new PomodoroTimerService();
+        _timerService.TimerUpdated += TimerService_TimerUpdated;
+        _timerService.SessionCompleted += TimerService_SessionCompleted;
 
         StartPauseCommand = new RelayCommand(ToggleStartPause);
         ResetCommand = new RelayCommand(ResetTimer);
@@ -114,38 +109,39 @@ public class MainViewModel : INotifyPropertyChanged
         UpdateStartPauseButtonText();
     }
 
-    private void Timer_Tick(object? sender, EventArgs e)
+    private void TimerService_TimerUpdated(object? sender, EventArgs e)
     {
-        if (_timeRemaining.TotalSeconds > 0)
-        {
-            _timeRemaining = _timeRemaining.Subtract(TimeSpan.FromSeconds(1));
-            UpdateDisplay();
-        }
-        else
-        {
-            _timer.Stop();
-            UpdateStartPauseButtonText();
+        UpdateDisplay();
+        UpdateStartPauseButtonText();
+    }
+    
+    private void TimerService_SessionCompleted(object? sender, EventArgs e)
+    {
+        SessionMode completedMode = _currentMode;
 
-            SystemSounds.Asterisk.Play();
+        SystemSounds.Asterisk.Play();
+        MessageBox.Show($"{completedMode} session complete.");
 
-            string completedSessionName = _isWorkSession ? "Work" : "Break";
-            MessageBox.Show($"{completedSessionName} session complete.");
-        }
+        SessionMode nextMode =
+            completedMode == SessionMode.Work
+                ? SessionMode.Break
+                : SessionMode.Work;
+
+        SetSessionMode(nextMode);
     }
 
     private void ToggleStartPause()
     {
-        if (_timer.IsEnabled)
+        if (_timerService.IsRunning)
         {
-            _timer.Stop();
+            _timerService.Pause();
         }
         else
         {
-            _timer.Start();
+            _timerService.Start();
         }
-
-        UpdateStartPauseButtonText();
     }
+
     private void ResetTimer()
     {
         if (!TryApplyDurationSettings())
@@ -153,15 +149,12 @@ public class MainViewModel : INotifyPropertyChanged
             return;
         }
 
-        _timer.Stop();
         ResetTimerForCurrentSession();
-        UpdateDisplay();
-        UpdateStartPauseButtonText();
     }
 
     private void UpdateStartPauseButtonText()
     {
-        StartPauseButtonText = _timer.IsEnabled ? "Pause" : "Start";
+        StartPauseButtonText = _timerService.IsRunning ? "Pause" : "Start";
     }
 
     private bool TryApplyDurationSettings()
@@ -175,27 +168,36 @@ public class MainViewModel : INotifyPropertyChanged
             return false;
         }
 
-        _workDurationMinutes = workMinutes;
-        _breakDurationMinutes = breakMinutes;
+        _settings.WorkDurationMinutes = workMinutes;
+        _settings.BreakDurationMinutes = breakMinutes;
 
         return true;
     }
 
     private void UpdateDisplay()
     {
-        TimerText = _timeRemaining.ToString(@"mm\:ss");
+        TimerText = _timerService.TimeRemaining.ToString(@"mm\:ss");
+
+        double totalSeconds = _timerService.TotalSessionTime.TotalSeconds;
+        if (totalSeconds <= 0)
+        {
+            ProgressPercent = 0;
+            return;
+        }
 
         double percentComplete =
-            (_totalSessionTime.TotalSeconds - _timeRemaining.TotalSeconds)
-            / _totalSessionTime.TotalSeconds * 100;
+            (totalSeconds - _timerService.TimeRemaining.TotalSeconds)
+            / totalSeconds * 100;
         ProgressPercent = percentComplete;
     }
+
     private void ResetTimerForCurrentSession()
     {
-        int minutes = _isWorkSession ? _workDurationMinutes : _breakDurationMinutes;
+        int minutes = _currentMode == SessionMode.Work
+            ? _settings.WorkDurationMinutes
+            : _settings.BreakDurationMinutes;
 
-        _totalSessionTime = TimeSpan.FromMinutes(minutes);
-        _timeRemaining = _totalSessionTime;
+        _timerService.Reset(TimeSpan.FromMinutes(minutes));
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

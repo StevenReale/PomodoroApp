@@ -70,7 +70,7 @@ Status: Done
 - Add a simple completion notification with a beep and message
 - Decide on any final v1 UI and interaction tweaks
 
-Status: In progress
+Status: Done
 
 ### 7. Refactor into light structure
 - Move app behavior out of `MainWindow.xaml.cs`
@@ -80,14 +80,23 @@ Status: In progress
 - Extract timer logic into a `PomodoroTimerService`
 - Add a `PomodoroSettings` model if it improves clarity
 
-Status: In progress
+Status: Done
 
-### 8. Publish the executable
+### 8. Add a compact overlay mode
+- Add a Mini button to the main window
+- Implement a compact always-on-top overlay (220×72px) with timer display and controls
+- Implement a micro state (220×12px progress strip) for minimal screen footprint
+- Auto-restore main window when a session completes, even from micro state
+- Share the ViewModel across both windows via `App.xaml.cs`
+
+Status: Done
+
+### 9. Publish the executable
 - Build a release version
 - Publish a Windows executable
 - Test the published app outside Visual Studio
 
-Status: Planned
+Status: Done
 
 ## Version 2 Roadmap
 
@@ -108,11 +117,9 @@ Status: Planned
 - Restore settings on launch
 
 ### 5. Notifications
-- Add a completion sound
-- Add Windows notifications if desired
+- Add Windows toast notifications
 
 ### 6. Window behavior improvements
-- Always on top
 - Minimize to tray
 - Tray icon with quick controls
 
@@ -133,21 +140,19 @@ Status: Planned
 
 Completed so far:
 - Project created
-- UI skeleton created
-- Basic timer wiring completed
-- Duration settings apply through Reset
-- Explicit Work / Break mode selection added
-- Minor UI polish applied to mode selector
-- Replace separate Start and Pause buttons with a single toggle button
-- Polish completion behavior and button-state behavior
+- UI skeleton built
+- Timer wired up (start, pause, reset)
+- Duration settings applied on reset
+- Explicit Work / Break mode selection
+- Single Start/Pause toggle button
+- Completion notification with beep and message
+- Full MVVM refactor: `MainViewModel`, `RelayCommand`, `PomodoroTimerService`, `PomodoroSettings`
+- Compact overlay: three-state window (full / compact / micro), always-on-top, shared ViewModel
 
 Immediate next step:
-- Refactor the app to use a `MainViewModel` and bindings
+- Begin Version 2 features
 
-Step after that:
-- Extract timer behavior into a `PomodoroTimerService`
-
-## Suggested Repository Structure
+## Repository Structure
 
 ```text
 PomodoroApp/
@@ -156,23 +161,15 @@ PomodoroApp/
   App.xaml.cs
   MainWindow.xaml
   MainWindow.xaml.cs
-```
-
-Later, after refactoring:
-
-```text
-PomodoroApp/
-  README.md
-  App.xaml
-  App.xaml.cs
-  MainWindow.xaml
-  MainWindow.xaml.cs
+  CompactWindow.xaml
+  CompactWindow.xaml.cs
   ViewModels/
     MainViewModel.cs
   Services/
     PomodoroTimerService.cs
   Models/
     PomodoroSettings.cs
+    SessionMode.cs
   Commands/
     RelayCommand.cs
 ```

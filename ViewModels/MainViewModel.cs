@@ -90,6 +90,8 @@ public class MainViewModel : INotifyPropertyChanged
         set => SetField(ref _startPauseButtonText, value);
     }
 
+    public event EventHandler? SessionCompleted;
+
     public ICommand StartPauseCommand { get; }
     public ICommand ResetCommand { get; }
 
@@ -120,6 +122,7 @@ public class MainViewModel : INotifyPropertyChanged
         SessionMode completedMode = _currentMode;
 
         SystemSounds.Asterisk.Play();
+        SessionCompleted?.Invoke(this, EventArgs.Empty);
         MessageBox.Show($"{completedMode} session complete.");
 
         SessionMode nextMode =

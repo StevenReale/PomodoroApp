@@ -75,6 +75,11 @@
                             Width="80"
                             Margin="5"
                             Command="{Binding ResetCommand}"/>
+                    <Button Content="Mini"
+                            Width="80"
+                            Margin="5"
+                            Click="MiniButton_Click"
+                            ToolTip="Compact overlay mode"/>
                 </StackPanel>
 
                 <GroupBox Header="Settings" Padding="10">
